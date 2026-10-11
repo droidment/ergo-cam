@@ -1,0 +1,25 @@
+name: ergocam
+description: "ErgoCam — live REBA/OWAS posture scoring from the phone camera (internal demo)."
+publish_to: 'none'
+
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  camera: ^0.12.1
+  ergo_core:
+    path: ../packages/ergo_core
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.4.3
+  permission_handler: ^12.0.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
