@@ -1,10 +1,14 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/camera_permission_provider.dart';
+import '../../providers/live_session_provider.dart';
 import '../../services/camera_permission_service.dart';
+import 'hud.dart';
+import 'skeleton_painter.dart';
 
-/// Live assessment screen. Phase 0: permission gate + blank camera placeholder.
+/// Live assessment screen: permission gate, then camera + skeleton overlay.
 class LiveScreen extends ConsumerStatefulWidget {
   const LiveScreen({super.key});
 
@@ -44,7 +48,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
             text: 'Could not check camera permission.\n$e',
           ),
           data: (a) => switch (a) {
-            CameraAccess.granted => const _CameraPlaceholder(),
+            CameraAccess.granted => const LiveCameraView(),
             CameraAccess.denied => _Message(
               icon: Icons.no_photography_outlined,
               text:
@@ -68,15 +72,77 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
   }
 }
 
-class _CameraPlaceholder extends StatelessWidget {
-  const _CameraPlaceholder();
+/// Camera preview with skeleton overlay and HUD. Only built once camera
+/// permission is granted; releases the camera whenever the app is hidden.
+class LiveCameraView extends ConsumerStatefulWidget {
+  const LiveCameraView({super.key});
+
+  @override
+  ConsumerState<LiveCameraView> createState() => _LiveCameraViewState();
+}
+
+class _LiveCameraViewState extends ConsumerState<LiveCameraView> {
+  late final AppLifecycleListener _lifecycle;
+
+  LiveSessionController get _session => ref.read(liveSessionProvider.notifier);
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle = AppLifecycleListener(
+      onShow: () => _session.start(),
+      onHide: () => _session.stop(),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _session.start();
+    });
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      key: Key('camera-placeholder'),
-      child: Text('Camera preview', style: TextStyle(color: Colors.white54)),
-    );
+    final state = ref.watch(liveSessionProvider);
+    final controller = state.controller;
+
+    return switch (state.status) {
+      CameraStatus.error => _Message(
+        icon: Icons.videocam_off_outlined,
+        text: 'Camera failed to start.\n${state.error ?? ''}',
+        actionLabel: 'Retry',
+        onAction: _session.start,
+      ),
+      CameraStatus.running when controller != null => Stack(
+        key: const Key('live-camera'),
+        children: [
+          Center(
+            child: CameraPreview(
+              controller,
+              child: RepaintBoundary(
+                child: CustomPaint(
+                  painter: SkeletonPainter(
+                    pose: state.pose,
+                    mirror: state.mirror,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          LiveHud(state: state, onModel: _session.setModel),
+        ],
+      ),
+      _ => const Center(
+        key: Key('camera-starting'),
+        child: Text(
+          'Starting camera…',
+          style: TextStyle(color: Colors.white54),
+        ),
+      ),
+    };
   }
 }
 

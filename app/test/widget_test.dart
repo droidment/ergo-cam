@@ -1,8 +1,23 @@
 import 'package:ergocam/main.dart';
+import 'package:ergocam/providers/live_session_provider.dart';
 import 'package:ergocam/services/camera_permission_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+/// Stands in for the real camera pipeline, which needs a device.
+class FakeLiveSession extends LiveSessionController {
+  int starts = 0;
+
+  @override
+  LiveState build() => const LiveState();
+
+  @override
+  Future<void> start() async => starts++;
+
+  @override
+  Future<void> stop() async {}
+}
 
 class FakeCameraPermission implements CameraPermissionService {
   FakeCameraPermission({required this.current, required this.onRequest});
@@ -28,10 +43,16 @@ class FakeCameraPermission implements CameraPermissionService {
   }
 }
 
+late FakeLiveSession session;
+
 Future<void> pumpApp(WidgetTester tester, FakeCameraPermission fake) async {
+  session = FakeLiveSession();
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [cameraPermissionServiceProvider.overrideWithValue(fake)],
+      overrides: [
+        cameraPermissionServiceProvider.overrideWithValue(fake),
+        liveSessionProvider.overrideWith(() => session),
+      ],
       child: const ErgoCamApp(),
     ),
   );
@@ -39,18 +60,19 @@ Future<void> pumpApp(WidgetTester tester, FakeCameraPermission fake) async {
 }
 
 void main() {
-  testWidgets('shows camera placeholder when already granted', (tester) async {
+  testWidgets('starts the camera when already granted', (tester) async {
     final fake = FakeCameraPermission(
       current: CameraAccess.granted,
       onRequest: CameraAccess.granted,
     );
     await pumpApp(tester, fake);
 
-    expect(find.byKey(const Key('camera-placeholder')), findsOneWidget);
+    expect(find.byKey(const Key('camera-starting')), findsOneWidget);
+    expect(session.starts, 1);
     expect(fake.requests, 0);
   });
 
-  testWidgets('asks once on first launch, shows placeholder on grant', (
+  testWidgets('asks once on first launch, starts camera on grant', (
     tester,
   ) async {
     final fake = FakeCameraPermission(
@@ -60,7 +82,7 @@ void main() {
     await pumpApp(tester, fake);
 
     expect(fake.requests, 1);
-    expect(find.byKey(const Key('camera-placeholder')), findsOneWidget);
+    expect(session.starts, 1);
   });
 
   testWidgets('denied shows a grant button that re-requests', (tester) async {
@@ -70,6 +92,7 @@ void main() {
     );
     await pumpApp(tester, fake);
     expect(fake.requests, 1);
+    expect(session.starts, 0);
 
     await tester.tap(find.text('Grant camera access'));
     await tester.pumpAndSettle();
