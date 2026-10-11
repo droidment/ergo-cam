@@ -10,10 +10,11 @@ is an add-on (Phase 5) that sends landmarks + scores, not video, so it stays fas
 ---
 
 ## Phase 0 — Scaffold
-- [ ] Flutter app in `app/` (Android minSdk 24+), Riverpod, flutter_lints
-- [ ] `packages/ergo_core` pure Dart package with `test` dependency, wired into app via path
-- [ ] Camera + microphone-free permissions setup (camera only)
-- [ ] CI-free is fine; `flutter analyze` + `dart test` clean
+- [x] Flutter app in `app/` (Android minSdk 24+), Riverpod, flutter_lints
+- [x] `packages/ergo_core` pure Dart package with `test` dependency, wired into app via path
+- [x] Camera + microphone-free permissions setup (camera only)
+- [x] CI-free is fine; `flutter analyze` + `dart test` clean
+- [ ] Verified launch on a Pixel (debug APK builds; no device connected yet)
 
 **Done when:** app launches on a Pixel and shows a blank camera screen placeholder.
 
