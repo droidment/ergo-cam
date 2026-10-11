@@ -19,11 +19,13 @@ is an add-on (Phase 5) that sends landmarks + scores, not video, so it stays fas
 **Done when:** app launches on a Pixel and shows a blank camera screen placeholder.
 
 ## Phase 1 — Live camera + pose overlay
-- [ ] `camera` preview, back camera, 720p, image stream (YUV420 → ML Kit InputImage)
-- [ ] `google_mlkit_pose_detection` in stream mode (base model first, accurate as toggle)
-- [ ] Map landmarks from image coords to preview coords (rotation + mirroring handled)
-- [ ] `CustomPainter` skeleton overlay; FPS counter on screen
-- [ ] Drop frames while a detection is in flight (no queue build-up)
+- [x] `camera` preview, back camera, 720p, image stream (YUV420 → ML Kit InputImage)
+      — CameraX delivers NV21 as one plane, passed straight to ML Kit
+- [x] `google_mlkit_pose_detection` in stream mode (base model first, accurate as toggle)
+- [x] Map landmarks from image coords to preview coords (rotation + mirroring handled)
+- [x] `CustomPainter` skeleton overlay; FPS counter on screen
+- [x] Drop frames while a detection is in flight (no queue build-up)
+- [ ] Verified on Pixel: ≥15 pose FPS, overlay aligned in portrait and landscape
 
 **Done when:** skeleton tracks a person smoothly at ≥15 FPS on a Pixel, correct in
 portrait and landscape.
