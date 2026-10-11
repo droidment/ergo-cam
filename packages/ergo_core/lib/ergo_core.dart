@@ -3,4 +3,5 @@
 /// Pure Dart — this library must never depend on Flutter.
 library;
 
+export 'src/models/landmark.dart';
 export 'src/version.dart';
