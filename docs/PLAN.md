@@ -14,7 +14,7 @@ is an add-on (Phase 5) that sends landmarks + scores, not video, so it stays fas
 - [x] `packages/ergo_core` pure Dart package with `test` dependency, wired into app via path
 - [x] Camera + microphone-free permissions setup (camera only)
 - [x] CI-free is fine; `flutter analyze` + `dart test` clean
-- [ ] Verified launch on a Pixel (debug APK builds; no device connected yet)
+- [x] Verified launch on a Pixel (release arm64 APK sideloaded, placeholder shown)
 
 **Done when:** app launches on a Pixel and shows a blank camera screen placeholder.
 
