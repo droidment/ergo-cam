@@ -1,0 +1,10 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# Dart / Flutter (per-package .gitignore files cover build outputs)
+.dart_tool/
+build/
