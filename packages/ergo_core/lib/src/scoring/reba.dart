@@ -117,7 +117,8 @@ class RebaResult {
     required this.tableC,
     required this.activity,
     required this.score,
-    required this.scoredArm,
+    required this.nearArm,
+    this.farArm,
   });
 
   final int trunk;
@@ -138,8 +139,14 @@ class RebaResult {
   /// Final REBA score, 1–15.
   final int score;
 
-  /// The arm that produced Group B (the worse one).
-  final BodySide scoredArm;
+  /// Group B sub-scores for each measured arm. Group B itself uses the worse.
+  final RebaArmScore nearArm;
+  final RebaArmScore? farArm;
+
+  /// The arm that produced Group B (the worse one; near arm on a tie).
+  BodySide get scoredArm => farArm != null && farArm!.tableB > nearArm.tableB
+      ? farArm!.side
+      : nearArm.side;
 
   RebaRisk get risk => RebaRisk.forScore(score);
 
@@ -179,23 +186,25 @@ RebaResult scoreRebaBands(
   final wrist =
       (inputs.wristFlexedOver15 ? 2 : 1) +
       (inputs.wristDeviatedOrTwisted ? 1 : 0);
-  _Arm arm(int uaBand, int laBand, BodySide side) {
+  RebaArmScore arm(int uaBand, int laBand, BodySide side) {
     final ua = rebaUpperArmScore(rebaUpperArmBands.scores[uaBand], inputs);
     final la = rebaLowerArmBands.scores[laBand];
-    return _Arm(
-      side,
-      ua,
-      la,
-      rebaTableBLookup(lowerArm: la, upperArm: ua, wrist: wrist),
+    return RebaArmScore(
+      side: side,
+      upperArm: ua,
+      lowerArm: la,
+      tableB: rebaTableBLookup(lowerArm: la, upperArm: ua, wrist: wrist),
     );
   }
 
   final farSide = near == BodySide.left ? BodySide.right : BodySide.left;
-  var worse = arm(b.nearUpperArm, b.nearLowerArm, near);
-  if (b.farUpperArm != null && b.farLowerArm != null) {
-    final other = arm(b.farUpperArm!, b.farLowerArm!, farSide);
-    if (other.tableB > worse.tableB) worse = other;
-  }
+  final nearArm = arm(b.nearUpperArm, b.nearLowerArm, near);
+  final farArm = b.farUpperArm != null && b.farLowerArm != null
+      ? arm(b.farUpperArm!, b.farLowerArm!, farSide)
+      : null;
+  final worse = farArm != null && farArm.tableB > nearArm.tableB
+      ? farArm
+      : nearArm;
   final coupling = inputs.coupling.score;
   final scoreB = worse.tableB + coupling;
 
@@ -219,7 +228,8 @@ RebaResult scoreRebaBands(
     tableC: tableC,
     activity: activity,
     score: math.min(tableC + activity, 15),
-    scoredArm: worse.side,
+    nearArm: nearArm,
+    farArm: farArm,
   );
 }
 
@@ -252,8 +262,15 @@ int rebaUpperArmScore(int base, SessionInputs inputs) {
   return s.clamp(1, 6);
 }
 
-class _Arm {
-  const _Arm(this.side, this.upperArm, this.lowerArm, this.tableB);
+/// Group B sub-scores for one arm (wrist from setup is shared by both).
+class RebaArmScore {
+  const RebaArmScore({
+    required this.side,
+    required this.upperArm,
+    required this.lowerArm,
+    required this.tableB,
+  });
+
   final BodySide side;
   final int upperArm;
   final int lowerArm;
