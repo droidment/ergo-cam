@@ -5,6 +5,8 @@ library;
 
 export 'src/angles/angle_calculator.dart';
 export 'src/filters/one_euro.dart';
+export 'src/io/csv.dart';
+export 'src/io/frame_json.dart';
 export 'src/math/vec2.dart';
 export 'src/models/frame_score.dart';
 export 'src/models/joint_angles.dart';
@@ -17,4 +19,5 @@ export 'src/scoring/owas.dart';
 export 'src/scoring/owas_tables.dart';
 export 'src/scoring/reba.dart';
 export 'src/scoring/reba_tables.dart';
+export 'src/stats/summary.dart';
 export 'src/version.dart';

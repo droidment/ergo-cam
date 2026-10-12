@@ -27,6 +27,29 @@ class FrameScore {
        owas = null,
        regions = null;
 
+  const FrameScore._copy(
+    this.timestamp,
+    this.pose,
+    this.angles,
+    this.reba,
+    this.owas,
+    this.regions,
+    this.unscoredReason,
+    this.confidence,
+  );
+
+  /// The same frame at another time (e.g. relative to a recording's start).
+  FrameScore at(Duration t) => FrameScore._copy(
+    t,
+    pose,
+    angles,
+    reba,
+    owas,
+    regions,
+    unscoredReason,
+    confidence,
+  );
+
   final Duration timestamp;
 
   /// Smoothed landmarks, or null when no person was detected.
