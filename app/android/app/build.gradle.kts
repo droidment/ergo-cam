@@ -19,7 +19,8 @@ android {
         applicationId = "com.ergocam.ergocam"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 24
+        // Pixel 10 and newer only: Android 16 (API 36) is what the Pixel 10 shipped with.
+        minSdk = 36
         targetSdk = flutter.targetSdkVersion
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)

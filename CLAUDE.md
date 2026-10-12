@@ -5,7 +5,7 @@ estimation, and scores posture live with REBA and OWAS. Sessions can be recorded
 summarized (max / P90 / mean / % high-risk frames) and exported. Optional: stream
 the live wireframe + scores to a laptop dashboard for demos.
 
-Primary target: **Android (Pixel)**. iOS should compile but is secondary.
+Primary target: **Android 16+ (Pixel 10 and newer, minSdk 36)**. iOS should compile but is secondary.
 
 ## Read before working
 - `docs/PLAN.md` — phases, scope, acceptance criteria. Work one phase at a time.
