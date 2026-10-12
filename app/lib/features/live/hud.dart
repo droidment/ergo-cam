@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:ergo_core/ergo_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,15 +7,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/live_session_provider.dart';
 import '../../providers/session_setup_provider.dart';
 import '../../services/framing.dart';
+import '../session/session_format.dart';
 import 'risk_colors.dart';
 
 /// Everything drawn over the live preview: score panel, setup button,
 /// performance readout and placement hints.
 class LiveHud extends ConsumerWidget {
-  const LiveHud({super.key, required this.state, required this.onSetup});
+  const LiveHud({
+    super.key,
+    required this.state,
+    required this.onSetup,
+    required this.onRecord,
+    required this.onSessions,
+  });
 
   final LiveState state;
   final VoidCallback onSetup;
+
+  /// Starts or stops recording, depending on [LiveState.recording].
+  final VoidCallback onRecord;
+  final VoidCallback onSessions;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -37,11 +50,39 @@ class LiveHud extends ConsumerWidget {
             ),
             Align(
               alignment: Alignment.topRight,
-              child: IconButton.filledTonal(
-                key: const Key('setup-button'),
-                tooltip: 'Session setup',
-                onPressed: onSetup,
-                icon: const Icon(Icons.tune),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton.filledTonal(
+                    key: const Key('setup-button'),
+                    tooltip: 'Session setup',
+                    onPressed: onSetup,
+                    icon: const Icon(Icons.tune),
+                  ),
+                  const SizedBox(height: 8),
+                  IconButton.filledTonal(
+                    key: const Key('sessions-button'),
+                    tooltip: 'Recorded sessions',
+                    onPressed: state.recording == null ? onSessions : null,
+                    icon: const Icon(Icons.video_library_outlined),
+                  ),
+                ],
+              ),
+            ),
+            if (state.recording case final rec?)
+              Align(
+                alignment: Alignment.topCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: _RecordingClock(startedAt: rec.startedAt),
+                ),
+              ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: _RecordButton(
+                recording: state.recording != null,
+                saving: state.saving,
+                onPressed: onRecord,
               ),
             ),
             Align(
@@ -304,6 +345,100 @@ class _PerfLine extends StatelessWidget {
     style: Theme.of(context).textTheme.labelSmall!.copyWith(
       color: Colors.white60,
       fontFeatures: const [FontFeature.tabularFigures()],
+    ),
+  );
+}
+
+class _RecordButton extends StatelessWidget {
+  const _RecordButton({
+    required this.recording,
+    required this.saving,
+    required this.onPressed,
+  });
+
+  final bool recording;
+  final bool saving;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: recording ? 'Stop recording' : 'Start recording',
+      child: GestureDetector(
+        key: const Key('record-button'),
+        onTap: saving ? null : onPressed,
+        child: Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 4),
+            color: Colors.black26,
+          ),
+          alignment: Alignment.center,
+          child: saving
+              ? const SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(color: Colors.white),
+                )
+              : AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: recording ? 26 : 52,
+                  height: recording ? 26 : 52,
+                  decoration: BoxDecoration(
+                    color: RiskColors.red,
+                    borderRadius: BorderRadius.circular(recording ? 4 : 26),
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "● REC m:ss", ticking once a second.
+class _RecordingClock extends StatefulWidget {
+  const _RecordingClock({required this.startedAt});
+  final DateTime startedAt;
+
+  @override
+  State<_RecordingClock> createState() => _RecordingClockState();
+}
+
+class _RecordingClockState extends State<_RecordingClock> {
+  late final Timer _tick;
+
+  @override
+  void initState() {
+    super.initState();
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _tick.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: RiskColors.red,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Text(
+        '● REC ${formatClock(DateTime.now().difference(widget.startedAt))}',
+        key: const Key('recording-clock'),
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontFeatures: [FontFeature.tabularFigures()],
+        ),
+      ),
     ),
   );
 }

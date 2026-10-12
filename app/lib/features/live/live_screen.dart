@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/camera_permission_provider.dart';
 import '../../providers/live_session_provider.dart';
 import '../../services/camera_permission_service.dart';
+import '../session/sessions_screen.dart';
 import '../session/setup_sheet.dart';
+import '../session/summary_screen.dart';
 import 'hud.dart';
 import 'skeleton_painter.dart';
 
@@ -85,13 +87,18 @@ class LiveCameraView extends ConsumerStatefulWidget {
 class _LiveCameraViewState extends ConsumerState<LiveCameraView> {
   late final AppLifecycleListener _lifecycle;
 
+  /// True while another page covers the live view; the camera stays off.
+  bool _away = false;
+
   LiveSessionController get _session => ref.read(liveSessionProvider.notifier);
 
   @override
   void initState() {
     super.initState();
     _lifecycle = AppLifecycleListener(
-      onShow: () => _session.start(),
+      onShow: () {
+        if (!_away) _session.start();
+      },
       onHide: () => _session.stop(),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -105,10 +112,43 @@ class _LiveCameraViewState extends ConsumerState<LiveCameraView> {
     super.dispose();
   }
 
+  /// Opens [page] with the camera released, and restarts it on return.
+  Future<void> _openPage(Widget page) async {
+    if (_away) return;
+    _away = true;
+    await _session.stop();
+    if (!mounted) return;
+    await Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => page));
+    _away = false;
+    if (mounted) await _session.start();
+  }
+
+  void _toggleRecording(LiveState state) {
+    if (state.recording == null) {
+      _session.startRecording();
+    } else {
+      _session.stopRecording();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(liveSessionProvider);
     final controller = state.controller;
+
+    // A finished recording opens its summary.
+    ref.listen(liveSessionProvider.select((s) => s.lastSaved), (prev, next) {
+      if (next != null && !identical(prev, next)) {
+        _openPage(SummaryScreen(meta: next));
+      }
+    });
+    ref.listen(liveSessionProvider.select((s) => s.notice), (prev, next) {
+      if (next != null && !identical(prev, next)) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(next.message)));
+      }
+    });
 
     return switch (state.status) {
       CameraStatus.error => _Message(
@@ -133,7 +173,12 @@ class _LiveCameraViewState extends ConsumerState<LiveCameraView> {
               ),
             ),
           ),
-          LiveHud(state: state, onSetup: () => showSetupSheet(context)),
+          LiveHud(
+            state: state,
+            onSetup: () => showSetupSheet(context),
+            onRecord: () => _toggleRecording(state),
+            onSessions: () => _openPage(const SessionsScreen()),
+          ),
         ],
       ),
       _ => const Center(

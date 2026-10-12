@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:camera/camera.dart';
 import 'package:ergo_core/ergo_core.dart';
 import 'package:flutter/foundation.dart';
@@ -8,9 +10,20 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../services/fps_meter.dart';
 import '../services/gravity_service.dart';
 import '../services/pose_service.dart';
+import '../services/session_store.dart';
 import 'session_setup_provider.dart';
+import 'sessions_provider.dart';
 
 enum CameraStatus { idle, starting, running, error }
+
+/// A recording in progress.
+@immutable
+class RecordingInfo {
+  const RecordingInfo({required this.startedAt});
+
+  /// Wall-clock start, for the elapsed-time display and the session id.
+  final DateTime startedAt;
+}
 
 @immutable
 class LiveState {
@@ -23,6 +36,10 @@ class LiveState {
     this.droppedFrames = 0,
     this.model = PoseDetectionModel.base,
     this.error,
+    this.recording,
+    this.saving = false,
+    this.lastSaved,
+    this.notice,
   });
 
   final CameraStatus status;
@@ -43,6 +60,18 @@ class LiveState {
   final PoseDetectionModel model;
   final String? error;
 
+  /// Non-null while recording.
+  final RecordingInfo? recording;
+
+  /// True while a finished recording is being written to storage.
+  final bool saving;
+
+  /// The most recently saved recording (the UI opens its summary).
+  final SessionMeta? lastSaved;
+
+  /// A one-off message for the user (shown once per new instance).
+  final LiveNotice? notice;
+
   bool get mirror =>
       controller?.description.lensDirection == CameraLensDirection.front;
 
@@ -55,6 +84,11 @@ class LiveState {
     int? droppedFrames,
     PoseDetectionModel? model,
     String? error,
+    RecordingInfo? recording,
+    bool clearRecording = false,
+    bool? saving,
+    SessionMeta? lastSaved,
+    LiveNotice? notice,
   }) {
     return LiveState(
       status: status ?? this.status,
@@ -65,8 +99,18 @@ class LiveState {
       droppedFrames: droppedFrames ?? this.droppedFrames,
       model: model ?? this.model,
       error: error ?? this.error,
+      recording: clearRecording ? null : (recording ?? this.recording),
+      saving: saving ?? this.saving,
+      lastSaved: lastSaved ?? this.lastSaved,
+      notice: notice ?? this.notice,
     );
   }
+}
+
+/// A message to show once; compared by identity so repeats still show.
+class LiveNotice {
+  LiveNotice(this.message);
+  final String message;
 }
 
 /// Owns the camera controller and pose pipeline for the live screen.
@@ -84,22 +128,134 @@ class LiveSessionController extends Notifier<LiveState> {
   final _scorer = FrameScorer();
   DeviceGravity? _gravity;
 
+  /// Recordings stop on their own after this long.
+  static const maxRecording = Duration(minutes: 5);
+
+  // Recording in progress (all null/empty when not recording).
+  Duration? _recordStart; // on [_clock]
+  DateTime? _recordWall;
+  SessionSetup? _recordSetup;
+  bool _setupChanged = false;
+  List<FrameScore> _log = [];
+  Timer? _capTimer;
+
   @override
   LiveState build() {
-    ref.onDispose(() => _serial(_teardown));
+    ref.onDispose(() {
+      _capTimer?.cancel();
+      _serial(_teardown);
+    });
     // Keep the latest gravity reading; frames read it when they're scored.
     ref.listen(deviceGravityProvider, (_, next) => _gravity = next.value);
+    ref.listen(sessionSetupProvider, (_, _) {
+      if (_recordStart != null) _setupChanged = true;
+    });
     return const LiveState();
   }
 
   Future<void> start() => _serial(_startNow);
 
   Future<void> stop() => _serial(() async {
+    // Save a recording in progress rather than losing it.
+    await _finishRecording(resumeStream: false);
     // Drop the controller from state first so no preview is built on a
     // controller that is being disposed.
-    if (ref.mounted) state = LiveState(model: state.model);
+    if (ref.mounted) {
+      state = LiveState(model: state.model, lastSaved: state.lastSaved);
+    }
     await _teardown();
   });
+
+  /// Starts recording video plus the per-frame log. Pose scoring continues
+  /// on the same camera stream while recording.
+  Future<void> startRecording() => _serial(() async {
+    final camera = _camera;
+    if (camera == null || _recordStart != null || !ref.mounted) return;
+    try {
+      // Recording takes over the frame stream; hand it the same callback.
+      if (camera.value.isStreamingImages) await camera.stopImageStream();
+      await camera.startVideoRecording(onAvailable: _onFrame);
+    } on Object catch (e) {
+      debugPrint('Recording failed to start: $e');
+      await _resumeStream(camera);
+      _notify('Recording could not start on this device ($e)');
+      return;
+    }
+    _recordStart = _clock.elapsed;
+    _recordWall = DateTime.now();
+    _recordSetup = ref.read(sessionSetupProvider);
+    _setupChanged = false;
+    _log = [];
+    _capTimer = Timer(maxRecording, () {
+      _notify(
+        'Recording stopped at the ${maxRecording.inMinutes}-minute limit',
+      );
+      stopRecording();
+    });
+    state = state.copyWith(recording: RecordingInfo(startedAt: _recordWall!));
+  });
+
+  /// Stops recording, resumes live scoring and saves the session.
+  Future<void> stopRecording() =>
+      _serial(() => _finishRecording(resumeStream: true));
+
+  Future<void> _finishRecording({required bool resumeStream}) async {
+    final start = _recordStart;
+    if (start == null) return;
+    _capTimer?.cancel();
+    final log = _log, setup = _recordSetup!, wall = _recordWall!;
+    final changed = _setupChanged;
+    _recordStart = null;
+    _log = [];
+    if (ref.mounted) {
+      state = state.copyWith(clearRecording: true, saving: true);
+    }
+
+    final camera = _camera;
+    String? videoPath;
+    if (camera != null && camera.value.isRecordingVideo) {
+      try {
+        videoPath = (await camera.stopVideoRecording()).path;
+      } on Object catch (e) {
+        debugPrint('Stopping video failed: $e');
+        _notify('Video could not be saved; the score log was kept');
+      }
+      if (resumeStream) await _resumeStream(camera);
+    }
+
+    if (!ref.mounted) return;
+    try {
+      final store = await ref.read(sessionStoreProvider.future);
+      final meta = await store.save(
+        taskName: setup.taskName,
+        startedAt: wall,
+        inputs: setup.inputs,
+        inputsChanged: changed,
+        frames: log,
+        videoPath: videoPath,
+      );
+      ref.invalidate(sessionsProvider);
+      if (ref.mounted) state = state.copyWith(saving: false, lastSaved: meta);
+    } on Object catch (e) {
+      debugPrint('Saving session failed: $e');
+      if (ref.mounted) state = state.copyWith(saving: false);
+      _notify('Could not save the recording: $e');
+    }
+  }
+
+  Future<void> _resumeStream(CameraController camera) async {
+    try {
+      if (!camera.value.isStreamingImages && !camera.value.isRecordingVideo) {
+        await camera.startImageStream(_onFrame);
+      }
+    } on Object catch (e) {
+      debugPrint('Resuming image stream failed: $e');
+    }
+  }
+
+  void _notify(String message) {
+    if (ref.mounted) state = state.copyWith(notice: LiveNotice(message));
+  }
 
   Future<void> setModel(PoseDetectionModel model) async {
     state = state.copyWith(model: model);
@@ -183,6 +339,10 @@ class LiveSessionController extends Notifier<LiveState> {
             inputs: ref.read(sessionSetupProvider).inputs,
             timestamp: now,
           );
+          final recordStart = _recordStart;
+          if (recordStart != null && now >= recordStart) {
+            _log.add(score.at(now - recordStart));
+          }
           state = state.copyWith(
             score: score,
             poseFps: _poseMeter.fps,

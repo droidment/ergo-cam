@@ -39,6 +39,9 @@ Future<void> pumpHud(
   WidgetTester tester,
   FrameScore? score, {
   SessionSetup setup = const SessionSetup(),
+  RecordingInfo? recording,
+  bool saving = false,
+  VoidCallback? onRecord,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -47,8 +50,15 @@ Future<void> pumpHud(
         home: Scaffold(
           backgroundColor: Colors.black,
           body: LiveHud(
-            state: LiveState(status: CameraStatus.running, score: score),
+            state: LiveState(
+              status: CameraStatus.running,
+              score: score,
+              recording: recording,
+              saving: saving,
+            ),
             onSetup: () {},
+            onRecord: onRecord ?? () {},
+            onSessions: () {},
           ),
         ),
       ),
@@ -128,5 +138,34 @@ void main() {
       find.text('Assumed: trunk twist/side bend, sitting'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('record button toggles and shows a running clock', (
+    tester,
+  ) async {
+    var taps = 0;
+    await pumpHud(tester, null, onRecord: () => taps++);
+    expect(find.byKey(const Key('recording-clock')), findsNothing);
+    await tester.tap(find.byKey(const Key('record-button')));
+    expect(taps, 1);
+
+    await pumpHud(
+      tester,
+      null,
+      recording: RecordingInfo(
+        startedAt: DateTime.now().subtract(const Duration(seconds: 65)),
+      ),
+      onRecord: () => taps++,
+    );
+    expect(find.textContaining('● REC 1:0'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('record-button')));
+    expect(taps, 2);
+  });
+
+  testWidgets('record button is disabled while saving', (tester) async {
+    var taps = 0;
+    await pumpHud(tester, null, saving: true, onRecord: () => taps++);
+    await tester.tap(find.byKey(const Key('record-button')));
+    expect(taps, 0);
   });
 }
