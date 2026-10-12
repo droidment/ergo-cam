@@ -101,7 +101,42 @@ void main() {
     });
   });
 
-  test('action category is n/a until the cited table is added', () {
-    expect(scoreOwas(angles(), const SessionInputs()).actionCategory, isNull);
+  group('action category for golden postures', () {
+    const none = SessionInputs();
+    test('G1 neutral standing 1121 → 1', () {
+      expect(scoreOwas(angles(), none).actionCategory, 1);
+    });
+    test('G3 stoop 2121 → 2', () {
+      expect(
+        scoreOwas(angles(trunk: 75, knee: 10, ua: 80), none).actionCategory,
+        2,
+      );
+    });
+    test('G4 squat lift 2141 → 3', () {
+      expect(
+        scoreOwas(angles(trunk: 40, knee: 100, ua: 30), none).actionCategory,
+        3,
+      );
+    });
+    test('G5 overhead 1221 → 1', () {
+      expect(scoreOwas(angles(ua: 120), none).actionCategory, 1);
+    });
+    test('squat lift with 25 kg (2143) → 3', () {
+      expect(
+        scoreOwas(
+          angles(trunk: 40, knee: 100, ua: 30),
+          const SessionInputs(loadKg: 25),
+        ).actionCategory,
+        3,
+      );
+    });
+    test('squat, one arm raised, 15 kg (2242) → 4', () {
+      final r = scoreOwas(
+        angles(trunk: 40, knee: 100, ua: 95),
+        const SessionInputs(loadKg: 15),
+      );
+      expect(r.code.code, '2242');
+      expect(r.actionCategory, 4);
+    });
   });
 }

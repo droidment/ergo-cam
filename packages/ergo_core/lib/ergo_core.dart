@@ -11,6 +11,7 @@ export 'src/models/landmark.dart';
 export 'src/models/session_inputs.dart';
 export 'src/scoring/angle_bands.dart';
 export 'src/scoring/owas.dart';
+export 'src/scoring/owas_tables.dart';
 export 'src/scoring/reba.dart';
 export 'src/scoring/reba_tables.dart';
 export 'src/version.dart';

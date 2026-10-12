@@ -1,6 +1,7 @@
 import '../models/joint_angles.dart';
 import '../models/session_inputs.dart';
 import 'angle_bands.dart';
+import 'owas_tables.dart';
 
 /// Back is "bent" above 20° of trunk flexion (docs/SCORING.md).
 const owasBackBentBands = AngleBands(
@@ -60,13 +61,15 @@ class OwasCode {
   String toString() => 'OWAS $code';
 }
 
-/// OWAS result for one frame. [actionCategory] (1–4) is null until the action
-/// category table has been transcribed from a cited source.
+/// OWAS result for one frame.
 class OwasResult {
-  const OwasResult(this.code, {this.actionCategory});
+  const OwasResult(this.code, this.actionCategory);
 
   final OwasCode code;
-  final int? actionCategory;
+
+  /// 1 no action · 2 correct in the near future · 3 as soon as possible ·
+  /// 4 immediately.
+  final int actionCategory;
 }
 
 /// OWAS posture code from raw angles.
@@ -106,5 +109,15 @@ OwasCode owasCode(JointAngles a, SessionInputs inputs) {
 }
 
 /// OWAS for one frame.
-OwasResult scoreOwas(JointAngles a, SessionInputs inputs) =>
-    OwasResult(owasCode(a, inputs));
+OwasResult scoreOwas(JointAngles a, SessionInputs inputs) {
+  final c = owasCode(a, inputs);
+  return OwasResult(
+    c,
+    owasActionCategoryFor(
+      back: c.back,
+      arms: c.arms,
+      legs: c.legs,
+      load: c.load,
+    ),
+  );
+}

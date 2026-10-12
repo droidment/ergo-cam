@@ -144,9 +144,41 @@ flexion; knee "bent" above 30°. With a bilateral stance, any visible bent knee 
 isn't visible counts as below shoulder. Twisted (3/4) comes from the trunk twist/side-bend toggle.
 
 **Action category** (1 normal · 2 correct soon · 3 correct ASAP · 4 correct immediately)
-comes from the standard 4×3×7×3 OWAS lookup table. **TODO: transcribe from a cited
-source into `owas_tables.dart`, add the source in a comment, and test every back-code block.**
-Until then, OWAS shows the posture code only, with category "n/a".
+comes from the standard 4×3×7×3 OWAS lookup table below, in `owas_tables.dart`.
+
+### OWAS action-category table
+Cells are the categories for load 1/2/3. The original (Karhu et al. 1977; FIOH manual) is not
+openly available. This table agrees cell for cell (252/252) with all of:
+1. Joung, Park & Kang (2022), *Int. J. Environ. Res. Public Health* 19(15):9768, Figure 4.
+   doi:10.3390/ijerph19159768
+2. Chowdhury, Boricha & Yardi (2012), *Indian J. Occup. Environ. Med.* 16(1):3–8, Figure 2.
+   doi:10.4103/0019-5278.99679
+3. Diego-Mas, *Método OWAS*, Ergonautas, Universidad Politécnica de Valencia, Tabla 6.
+   https://www.ergonautas.upv.es/metodos/owas/owas-ayuda.php (also parsed and checked by script)
+
+Transcribed and reviewed 2026-10-12.
+
+| Back | Arms | L1 | L2 | L3 | L4 | L5 | L6 | L7 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 1 | 1/1/1 | 1/1/1 | 1/1/1 | 2/2/2 | 2/2/2 | 1/1/1 | 1/1/1 |
+| 1 | 2 | 1/1/1 | 1/1/1 | 1/1/1 | 2/2/2 | 2/2/2 | 1/1/1 | 1/1/1 |
+| 1 | 3 | 1/1/1 | 1/1/1 | 1/1/1 | 2/2/3 | 2/2/3 | 1/1/1 | 1/1/2 |
+| 2 | 1 | 2/2/3 | 2/2/3 | 2/2/3 | 3/3/3 | 3/3/3 | 2/2/2 | 2/3/3 |
+| 2 | 2 | 2/2/3 | 2/2/3 | 2/3/3 | 3/4/4 | 3/4/4 | 3/3/4 | 2/3/4 |
+| 2 | 3 | 3/3/4 | 2/2/3 | 3/3/3 | 3/4/4 | 4/4/4 | 4/4/4 | 2/3/4 |
+| 3 | 1 | 1/1/1 | 1/1/1 | 1/1/2 | 3/3/3 | 4/4/4 | 1/1/1 | 1/1/1 |
+| 3 | 2 | 2/2/3 | 1/1/1 | 1/1/2 | 4/4/4 | 4/4/4 | 3/3/3 | 1/1/1 |
+| 3 | 3 | 2/2/3 | 1/1/1 | 2/3/3 | 4/4/4 | 4/4/4 | 4/4/4 | 1/1/1 |
+| 4 | 1 | 2/3/3 | 2/2/3 | 2/2/3 | 4/4/4 | 4/4/4 | 4/4/4 | 2/3/4 |
+| 4 | 2 | 3/3/4 | 2/3/4 | 3/3/4 | 4/4/4 | 4/4/4 | 4/4/4 | 2/3/4 |
+| 4 | 3 | 4/4/4 | 2/3/4 | 3/3/4 | 4/4/4 | 4/4/4 | 4/4/4 | 2/3/4 |
+
+**Open question:** Lins & Hein (2022), *BMC Musculoskelet. Disord.*, Table 5 (citing Mattila &
+Vilkki), gives only min–max per cell and disagrees on back 3 / arms 3 / legs 1–3
+(1 vs 2/2/3, 2–3 vs 1/1/1, 1 vs 2/3/3). It's probably a row mix-up in that copy; check against
+the Mattila & Vilkki or FIOH original before relying on those cells. Other circulating copies
+(a 2024 engineering journal, a thesis annex) contain errors, so don't re-transcribe from an
+arbitrary web copy.
 
 ## Golden posture tests (must pass)
 Inputs: load 0, coupling good, no activity flags, no manual toggles.
