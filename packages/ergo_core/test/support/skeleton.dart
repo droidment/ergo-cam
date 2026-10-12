@@ -15,6 +15,7 @@ class Skeleton {
     this.upperArm = 0,
     this.elbow = 0,
     this.knee = 0,
+    this.shinLean = 0,
     this.facingRight = true,
     this.nearSide = BodySide.left,
     this.farVisible = false,
@@ -25,6 +26,10 @@ class Skeleton {
   });
 
   final double trunk, neck, upperArm, elbow, knee;
+
+  /// Forward lean of the shin from vertical. Doesn't change knee flexion;
+  /// makes deep squats physically plausible (hips over the feet).
+  final double shinLean;
   final bool facingRight;
   final BodySide nearSide;
   final bool farVisible;
@@ -49,8 +54,9 @@ class Skeleton {
     }
 
     const hip = Vec2(0, 0);
-    final knee_ = hip + dir(180 - knee) * 45; // thigh swings forward by knee
-    final ankle = knee_ + dir(180) * 45; // shin vertical
+    // Thigh swings forward by the knee angle; shin leans by shinLean.
+    final knee_ = hip + dir(180 + shinLean - knee) * 45;
+    final ankle = knee_ + dir(180 + shinLean) * 45;
     final shoulder = hip + dir(trunk) * 55;
     final ear = shoulder + dir(trunk + neck) * 20;
     final nose = ear + dir(trunk + neck + 90) * 8;

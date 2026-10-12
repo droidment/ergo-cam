@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">
+  <!-- Same artwork as the Android adaptive icon (res/drawable/ic_launcher_foreground.xml) -->
+  <rect width="108" height="108" rx="24" fill="#102027"/>
+  <path d="M56,60 h14 a2,2 0 0 1 2,2 v10 a2,2 0 0 1 -2,2 h-14 a2,2 0 0 1 -2,-2 v-10 a2,2 0 0 1 2,-2 z" fill="#FFFFFF" fill-opacity=".2" stroke="#FFFFFF" stroke-width="3"/>
+  <path d="M36,56 L49,66 L39,77 L46,78" fill="none" stroke="#FDD835" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M36,56 L52,42" fill="none" stroke="#FB8C00" stroke-width="5" stroke-linecap="round"/>
+  <path d="M55.5,37.5 L52,42 L57,52 L60,61" fill="none" stroke="#43A047" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="59" cy="33" r="6.5" fill="#FFFFFF"/>
+  <g fill="#FFFFFF">
+    <circle cx="52" cy="42" r="2.4"/><circle cx="57" cy="52" r="2.4"/><circle cx="36" cy="56" r="2.4"/>
+    <circle cx="49" cy="66" r="2.4"/><circle cx="39" cy="77" r="2.4"/>
+  </g>
+</svg>

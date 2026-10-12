@@ -81,6 +81,12 @@ void main() {
       }
     }
 
+    test('shin lean does not change knee flexion', () {
+      final a = anglesOf(Skeleton(trunk: 40, knee: 100, shinLean: 35));
+      expect(a.kneeFlexion, closeTo(100, eps));
+      expect(a.trunkFlexion, closeTo(40, eps));
+    });
+
     test('overhead reach beyond 90°', () {
       final a = anglesOf(Skeleton(upperArm: 120, elbow: 30));
       expect(a.nearArm.upperArmFlexion, closeTo(120, eps));
