@@ -131,6 +131,20 @@ Implementation: use near-boundary hysteresis (±3°) so scores don't flicker at 
 A band only changes once the angle is more than 3° past that band's edge (`StableRebaScorer`).
 Golden tests use the pure, hysteresis-free scorer.
 
+## Region colours (display only)
+The live skeleton colours each REBA region by its sub-score, scaled to that region's own
+range. This is a display convention, not part of REBA (`body_regions.dart`):
+
+| Region | Green (low) | Yellow (moderate) | Orange (elevated) | Red (high) |
+|---|---|---|---|---|
+| Trunk | 1 | 2 | 3 | 4–5 |
+| Legs | 1 | 2 | 3 | 4 |
+| Upper arm (each arm) | 1 | 2 | 3 | 4–6 |
+| Neck | 1 | — | 2 | 3 |
+| Lower arm (each arm) | 1 | — | 2 | — |
+
+Unscored frames, and an arm that wasn't measured, are drawn neutral grey.
+
 ## OWAS
 Four-digit code: back, arms, legs, load.
 - **Back:** 1 straight · 2 bent · 3 twisted · 4 bent and twisted (bent = trunk flex > 20°)

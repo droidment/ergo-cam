@@ -43,12 +43,13 @@ portrait and landscape.
 **Done when:** `dart test` passes, including "neutral standing ≤ 3 REBA".
 
 ## Phase 3 — Live scoring UI
-- [ ] Session setup sheet: task name, load (kg), coupling, activity flags,
+- [x] Session setup sheet: task name, load (kg), coupling, activity flags,
       manual overrides for twist / side-bend / wrist (2D can't see these well)
-- [ ] Skeleton colored by body-region score (green → red)
-- [ ] HUD: live REBA (with risk band), OWAS category, confidence indicator
-- [ ] Camera placement guide: "side view, whole body in frame, 2–4 m away"
-- [ ] Frames lacking confident landmarks show "unscored", not a number
+- [x] Skeleton colored by body-region score (green → red)
+- [x] HUD: live REBA (with risk band), OWAS category, confidence indicator
+- [x] Camera placement guide: "side view, whole body in frame, 2–4 m away"
+- [x] Frames lacking confident landmarks show "unscored", not a number
+- [ ] Verified live on Pixel: standing ≤ 3; squat lift with 15 kg, fair grip ≥ 8
 
 **Done when:** a squat-lift scores high, standing upright scores low, live.
 
