@@ -63,6 +63,47 @@ class SessionInputs {
   final bool walking;
   final bool kneeling;
 
+  SessionInputs copyWith({
+    double? loadKg,
+    bool? shockOrRapidForce,
+    Coupling? coupling,
+    bool? staticPosture,
+    bool? repeatedSmallRange,
+    bool? rapidLargeChanges,
+    bool? trunkTwistOrSideBend,
+    bool? neckTwistOrSideBend,
+    bool? wristFlexedOver15,
+    bool? wristDeviatedOrTwisted,
+    bool? armAbductedOrRotated,
+    bool? shoulderRaised,
+    bool? armSupported,
+    bool? unilateralStance,
+    bool? sitting,
+    bool? walking,
+    bool? kneeling,
+  }) {
+    return SessionInputs(
+      loadKg: loadKg ?? this.loadKg,
+      shockOrRapidForce: shockOrRapidForce ?? this.shockOrRapidForce,
+      coupling: coupling ?? this.coupling,
+      staticPosture: staticPosture ?? this.staticPosture,
+      repeatedSmallRange: repeatedSmallRange ?? this.repeatedSmallRange,
+      rapidLargeChanges: rapidLargeChanges ?? this.rapidLargeChanges,
+      trunkTwistOrSideBend: trunkTwistOrSideBend ?? this.trunkTwistOrSideBend,
+      neckTwistOrSideBend: neckTwistOrSideBend ?? this.neckTwistOrSideBend,
+      wristFlexedOver15: wristFlexedOver15 ?? this.wristFlexedOver15,
+      wristDeviatedOrTwisted:
+          wristDeviatedOrTwisted ?? this.wristDeviatedOrTwisted,
+      armAbductedOrRotated: armAbductedOrRotated ?? this.armAbductedOrRotated,
+      shoulderRaised: shoulderRaised ?? this.shoulderRaised,
+      armSupported: armSupported ?? this.armSupported,
+      unilateralStance: unilateralStance ?? this.unilateralStance,
+      sitting: sitting ?? this.sitting,
+      walking: walking ?? this.walking,
+      kneeling: kneeling ?? this.kneeling,
+    );
+  }
+
   int get activityScore =>
       (staticPosture ? 1 : 0) +
       (repeatedSmallRange ? 1 : 0) +
