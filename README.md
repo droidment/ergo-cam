@@ -286,4 +286,5 @@ engine tests and walks the golden postures.
 
 ## License
 
-No license has been chosen yet, so all rights are reserved for now.
+[BSD 3-Clause](LICENSE). Third-party components keep their own licenses; in particular, Google
+ML Kit is used under the [ML Kit terms](https://developers.google.com/ml-kit/terms).
