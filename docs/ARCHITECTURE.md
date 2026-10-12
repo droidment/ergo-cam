@@ -65,3 +65,20 @@ stats/      summary.dart          (max, p90, mean, % over threshold)
   "confidence": 0.86
 }
 ```
+
+## Recording and storage
+Recording stops the image stream and restarts the camera with
+`startVideoRecording(onAvailable: ...)`, so the same frames feed pose scoring while CameraX
+encodes video (no audio). Stopping restores the plain image stream. Each scored or unscored
+frame is logged with its time relative to the recording start. Recordings cap at 5 minutes and
+are saved if the app is backgrounded mid-recording.
+
+Sessions live in the app's private documents folder, one self-contained folder each:
+```
+sessions/<yyyyMMdd-HHmmss>/session.json   setup, summary, ergo_core version, format version
+sessions/<yyyyMMdd-HHmmss>/frames.jsonl   one wire-format frame per line
+sessions/<yyyyMMdd-HHmmss>/video.mp4      if video was captured
+sessions/<yyyyMMdd-HHmmss>/frames.csv     written on export
+```
+Export is user-initiated through the system share sheet (CSV + JSON, video separately).
+

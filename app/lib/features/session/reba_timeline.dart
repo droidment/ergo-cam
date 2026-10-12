@@ -95,10 +95,19 @@ class RebaTimeline extends StatelessWidget {
                 showTitles: true,
                 reservedSize: 20,
                 interval: math.max(1, (maxX / 5).ceilToDouble()),
-                getTitlesWidget: (v, _) => Text(
-                  formatClock(Duration(milliseconds: (v * 1000).round())),
-                  style: labelStyle,
-                ),
+                getTitlesWidget: (v, meta) {
+                  // fl_chart always labels the axis end; skip it unless it
+                  // falls on the interval, so it can't collide with the last
+                  // regular label.
+                  final interval = meta.appliedInterval;
+                  if (v == meta.max && (v / interval) % 1 != 0) {
+                    return const SizedBox.shrink();
+                  }
+                  return Text(
+                    formatClock(Duration(milliseconds: (v * 1000).round())),
+                    style: labelStyle,
+                  );
+                },
               ),
             ),
           ),

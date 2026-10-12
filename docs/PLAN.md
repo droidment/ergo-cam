@@ -54,12 +54,14 @@ portrait and landscape.
 **Done when:** a squat-lift scores high, standing upright scores low, live.
 
 ## Phase 4 — Record, summarize, export
-- [ ] Record: video file + per-frame log (timestamp, landmarks, angles, scores)
-      — try `startVideoRecording(onAvailable:)` to keep the pose stream alive while recording
-- [ ] Summary: max / P90 / mean REBA, % frames REBA ≥ 8, max / mean OWAS, % frames OWAS ≥ 3
-- [ ] Timeline chart of REBA over time (`fl_chart`), tap to seek
-- [ ] Playback screen: recorded video with skeleton re-drawn from the frame log
-- [ ] Export CSV + JSON via share sheet; session list stored locally (sqflite or Isar)
+- [x] Record: video file + per-frame log (timestamp, landmarks, angles, scores)
+      — `startVideoRecording(onAvailable:)` keeps the pose stream alive (works on emulator)
+- [x] Summary: max / P90 / mean REBA, % frames REBA ≥ 8, max / mean OWAS, % frames OWAS ≥ 3
+- [x] Timeline chart of REBA over time (`fl_chart`), tap to seek
+- [x] Playback screen: recorded video with skeleton re-drawn from the frame log
+- [x] Export CSV + JSON via share sheet; session list stored locally
+      — one folder per session instead of sqflite/Isar (decided 2026-10-12)
+- [ ] Verified on Pixel: 30 s recording → summary + annotated review
 
 **Done when:** a 30-second recording produces a summary + playable annotated review.
 
@@ -72,6 +74,9 @@ portrait and landscape.
 **Done when:** someone across the room sees the live wireframe and score on a laptop.
 
 ## Later (not in demo)
+- Upload sessions (video + summary) from the phone to a Google storage account (Drive or Cloud
+  Storage, TBD). Requested 2026-10-12. Needs CLAUDE.md rule 5 ("no cloud upload of video")
+  changed first. Session folders are already self-contained for this.
 - Multi-person tracking, NIOSH lifting equation, RULA
 - Server-side re-analysis with heavier 3D models
 - Push findings to S/4HANA EHS (risk assessment) via OData; Fiori review app
