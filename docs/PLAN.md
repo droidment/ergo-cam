@@ -36,8 +36,8 @@ portrait and landscape.
       — `app/lib/services/gravity_service.dart`; wired into the live screen in Phase 3
 - [x] Joint angles per `docs/SCORING.md`
 - [x] REBA: all sub-scores, Tables A/B/C, load/coupling/activity, risk level
-- [ ] OWAS: back/arms/legs/load codes + action category (table from cited source)
-      — codes done; action category waits on a reviewed, cited table
+- [x] OWAS: back/arms/legs/load codes + action category (table from cited source)
+      — 3 sources agree 252/252; one disputed row noted in SCORING.md
 - [x] Unit tests for every table and every golden posture
 
 **Done when:** `dart test` passes, including "neutral standing ≤ 3 REBA".
