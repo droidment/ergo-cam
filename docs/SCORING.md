@@ -19,7 +19,23 @@ Use the side of the body nearest the camera (higher landmark visibility).
 | Twist / side bend | Not reliable in 2D. Manual toggles in setup (+1 when on) |
 | Shoulder raised | Optional heuristic: shoulder-to-ear distance shrinks > 30% vs baseline |
 
-Minimum visibility to score a frame: 0.5 on hip, shoulder, knee, ankle, and elbow (near side).
+Minimum visibility to score a frame: 0.5 on hip, shoulder, knee, ankle, elbow, wrist and ear
+(near side). The wrist and ear are needed for the elbow and neck angles; if either is below
+threshold the frame is unscored rather than guessed. The frame also needs a facing direction:
+near-side heel + foot index, or else the nose (vs. the near ear).
+
+### Measurement decisions
+- **Near side** = the side whose required landmarks have the higher total visibility.
+- **Trunk / neck lines** use left–right midpoints when the far side is visible, else the near side.
+- **Knee** = the more flexed of the visible knees.
+- **Both arms** are measured when the far arm's shoulder, elbow and wrist are visible; REBA
+  Group B uses the worse arm (higher Table B; near arm on a tie). An unseen far arm is never guessed.
+- **Neutral tolerance:** "upright" trunk and "no extension" neck mean within ±5°, so camera
+  noise doesn't add points.
+- **Exact boundaries** follow the REBA sheet: 20° trunk → 2, 60° → 3; −20° trunk → 2;
+  20° neck → 1; ±20° upper arm → 1, 45° → 2, 90° → 3; elbow 60° and 100° → 1;
+  knee 30° and 60° → +1; load 5 and 10 kg → 1.
+- **Sitting** drops the knee >60° (+2) adjustment; the 30–60° (+1) still applies.
 
 ## REBA
 
@@ -112,6 +128,8 @@ Lower arm = 2
 **Risk bands:** 1 negligible · 2–3 low · 4–7 medium · 8–10 high · 11–15 very high
 
 Implementation: use near-boundary hysteresis (±3°) so scores don't flicker at thresholds.
+A band only changes once the angle is more than 3° past that band's edge (`StableRebaScorer`).
+Golden tests use the pure, hysteresis-free scorer.
 
 ## OWAS
 Four-digit code: back, arms, legs, load.
@@ -119,6 +137,11 @@ Four-digit code: back, arms, legs, load.
 - **Arms:** 1 both below shoulder · 2 one at/above shoulder · 3 both at/above
 - **Legs:** 1 sitting · 2 standing, both legs straight · 3 standing on one straight leg · 4 standing, both knees bent · 5 one knee bent · 6 kneeling · 7 walking
 - **Load:** 1 <10 kg · 2 10–20 kg · 3 >20 kg
+
+From 2D pose: back bent above 20° (20° is straight); arm "at/above shoulder" from 90° upper-arm
+flexion; knee "bent" above 30°. With a bilateral stance, any visible bent knee gives 4, else 2;
+"standing on one leg" (3/5), sitting, kneeling and walking come from setup toggles. An arm that
+isn't visible counts as below shoulder. Twisted (3/4) comes from the trunk twist/side-bend toggle.
 
 **Action category** (1 normal · 2 correct soon · 3 correct ASAP · 4 correct immediately)
 comes from the standard 4×3×7×3 OWAS lookup table. **TODO: transcribe from a cited
@@ -128,13 +151,21 @@ Until then, OWAS shows the posture code only, with category "n/a".
 ## Golden posture tests (must pass)
 Inputs: load 0, coupling good, no activity flags, no manual toggles.
 
-| # | Posture | Key angles | Expected REBA |
-|---|---|---|---|
-| G1 | Neutral standing, arms by sides | trunk 0, neck 5, knees 0, upper arm 0, elbow 5 | 1–3 |
-| G2 | Light forward reach at bench | trunk 15, neck 15, upper arm 50, elbow 80 | 3–5 |
-| G3 | Stoop to floor, legs straight | trunk 75, neck 25, knees 10, upper arm 80, elbow 10 | 7–10 |
-| G4 | Deep squat lift | trunk 40, knees 100, upper arm 30, elbow 20 | 6–9 |
-| G5 | Overhead reach | trunk 0, neck 25 ext, upper arm 120, elbow 30 | 5–8 |
+Expected values are derived by hand from the rules and tables above (wrist 1 throughout).
+Angles not given originally are set to a neutral value, marked *.
 
-Also test exact sub-scores for G1 by hand: trunk 1, neck 1, legs 1 → A 1;
-upper arm 1, lower arm 2, wrist 1 → B 1; C(1,1) = 1 → REBA 1.
+| # | Posture | Angles (°) | Group A: trunk, neck, legs → Table A (+load) | Group B: UA, LA, wrist → Table B (+coupling) | C | REBA |
+|---|---|---|---|---|---|---|
+| G1 | Neutral standing, arms by sides | trunk 0, neck 5, knee 0, UA 0, elbow 5 | 1, 1, 1 → 1 | 1, 2, 1 → 1 | 1 | **1** |
+| G2 | Light forward reach at bench | trunk 15, neck 15, knee 0*, UA 50, elbow 80 | 2, 1, 1 → 2 | 3, 1, 1 → 3 | 2 | **2** |
+| G3 | Stoop to floor, legs straight | trunk 75, neck 25, knee 10, UA 80, elbow 10 | 4, 2, 1 → 5 | 3, 2, 1 → 4 | 5 | **5** |
+| G4 | Deep squat lift | trunk 40, neck 10*, knee 100, UA 30, elbow 20 | 3, 1, 3 → 5 | 2, 2, 1 → 2 | 4 | **4** |
+| G4b | G4 with 15 kg, fair grip, looking at load | trunk 40, neck 25, knee 100, UA 30, elbow 20 | 3, 2, 3 → 6 (+2 = 8) | 2, 2, 1 → 2 (+1 = 3) | 8 | **8** (high) |
+| G5 | Overhead reach | trunk 0, neck −25, knee 0*, UA 120, elbow 30 | 1, 2, 1 → 1 | 4, 2, 1 → 5 | 3 | **3** |
+
+G1–G5 use the default inputs above; G4b adds load 15 kg and fair coupling.
+The original ranges (G2 3–5, G3 7–10, G4 6–9, G5 5–8) don't follow from these tables with
+zero load and were replaced on 2026-10-12. Without load, REBA rates these postures low to
+medium; load, coupling and activity are what push real lifts into the high bands.
+Neutral standing must stay ≤ 3. The goldens also run end to end (synthetic landmarks on a
+phone tilted 8° → angles → REBA).
