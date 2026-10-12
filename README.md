@@ -208,7 +208,13 @@ MP4. Both go through the Android share sheet, so they can be emailed or saved to
 
 ## Getting started
 
-**You need:** Flutter 3.47+ (Dart 3.13), the Android SDK, and an Android 16+ phone with a camera.
+**Just want to try it?** Download the APK from the
+[latest release](https://github.com/droidment/ergo-cam/releases) on an Android 16+ phone and
+install it (allow installs from your browser or Files app when asked).
+
+**To build it yourself:**
+
+You need Flutter 3.47+ (Dart 3.13), the Android SDK, and an Android 16+ phone with a camera.
 Pixel 10 or newer is the primary target. iOS compiles but is untested.
 
 ```bash
