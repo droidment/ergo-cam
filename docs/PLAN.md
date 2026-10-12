@@ -31,12 +31,14 @@ is an add-on (Phase 5) that sends landmarks + scores, not video, so it stays fas
 portrait and landscape.
 
 ## Phase 2 — Angles + scoring engine (ergo_core)
-- [ ] Landmark model, visibility gating, One Euro filter smoothing
-- [ ] Gravity vector from accelerometer (`sensors_plus`) so phone tilt doesn't fake trunk flexion
-- [ ] Joint angles per `docs/SCORING.md`
-- [ ] REBA: all sub-scores, Tables A/B/C, load/coupling/activity, risk level
+- [x] Landmark model, visibility gating, One Euro filter smoothing
+- [x] Gravity vector from accelerometer (`sensors_plus`) so phone tilt doesn't fake trunk flexion
+      — `app/lib/services/gravity_service.dart`; wired into the live screen in Phase 3
+- [x] Joint angles per `docs/SCORING.md`
+- [x] REBA: all sub-scores, Tables A/B/C, load/coupling/activity, risk level
 - [ ] OWAS: back/arms/legs/load codes + action category (table from cited source)
-- [ ] Unit tests for every table and every golden posture
+      — codes done; action category waits on a reviewed, cited table
+- [x] Unit tests for every table and every golden posture
 
 **Done when:** `dart test` passes, including "neutral standing ≤ 3 REBA".
 
