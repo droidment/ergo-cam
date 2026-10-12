@@ -25,7 +25,7 @@ is an add-on (Phase 5) that sends landmarks + scores, not video, so it stays fas
 - [x] Map landmarks from image coords to preview coords (rotation + mirroring handled)
 - [x] `CustomPainter` skeleton overlay; FPS counter on screen
 - [x] Drop frames while a detection is in flight (no queue build-up)
-- [ ] Verified on Pixel: ≥15 pose FPS, overlay aligned in portrait and landscape
+- [x] Verified on Pixel 11: ≥15 pose FPS, overlay aligned in portrait and landscape
 
 **Done when:** skeleton tracks a person smoothly at ≥15 FPS on a Pixel, correct in
 portrait and landscape.
