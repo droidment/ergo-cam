@@ -3,9 +3,12 @@ import 'package:ergo_core/ergo_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../services/fps_meter.dart';
+import '../services/gravity_service.dart';
 import '../services/pose_service.dart';
+import 'session_setup_provider.dart';
 
 enum CameraStatus { idle, starting, running, error }
 
@@ -14,7 +17,7 @@ class LiveState {
   const LiveState({
     this.status = CameraStatus.idle,
     this.controller,
-    this.pose,
+    this.score,
     this.poseFps = 0,
     this.cameraFps = 0,
     this.droppedFrames = 0,
@@ -25,8 +28,9 @@ class LiveState {
   final CameraStatus status;
   final CameraController? controller;
 
-  /// Latest detected person, or null when nobody is in frame.
-  final PoseFrame? pose;
+  /// Latest scored (or unscored) frame, including the smoothed pose to draw.
+  /// Null until the first detection completes.
+  final FrameScore? score;
 
   /// Completed detections per second — the number that matters for Phase 1.
   final double poseFps;
@@ -45,8 +49,7 @@ class LiveState {
   LiveState copyWith({
     CameraStatus? status,
     CameraController? controller,
-    PoseFrame? pose,
-    bool clearPose = false,
+    FrameScore? score,
     double? poseFps,
     double? cameraFps,
     int? droppedFrames,
@@ -56,7 +59,7 @@ class LiveState {
     return LiveState(
       status: status ?? this.status,
       controller: controller ?? this.controller,
-      pose: clearPose ? null : (pose ?? this.pose),
+      score: score ?? this.score,
       poseFps: poseFps ?? this.poseFps,
       cameraFps: cameraFps ?? this.cameraFps,
       droppedFrames: droppedFrames ?? this.droppedFrames,
@@ -78,10 +81,14 @@ class LiveSessionController extends Notifier<LiveState> {
   final _poseMeter = FpsMeter();
   int _dropped = 0;
   Future<void> _ops = Future.value();
+  final _scorer = FrameScorer();
+  DeviceGravity? _gravity;
 
   @override
   LiveState build() {
     ref.onDispose(() => _serial(_teardown));
+    // Keep the latest gravity reading; frames read it when they're scored.
+    ref.listen(deviceGravityProvider, (_, next) => _gravity = next.value);
     return const LiveState();
   }
 
@@ -123,6 +130,7 @@ class LiveSessionController extends Notifier<LiveState> {
       _pose = PoseService(model: state.model);
       await camera.initialize();
       _dropped = 0;
+      _scorer.reset();
       _cameraMeter.reset();
       _poseMeter.reset();
       _clock
@@ -131,6 +139,9 @@ class LiveSessionController extends Notifier<LiveState> {
       await camera.startImageStream(_onFrame);
       if (!ref.mounted) return;
       state = state.copyWith(status: CameraStatus.running, controller: camera);
+      await WakelockPlus.enable().catchError((Object e) {
+        debugPrint('Wakelock unavailable: $e');
+      });
     } catch (e) {
       await _teardown();
       if (!ref.mounted) return;
@@ -152,19 +163,28 @@ class LiveSessionController extends Notifier<LiveState> {
       _dropped++;
       return;
     }
+    final orientation = camera.value.deviceOrientation;
     pose
         .detect(
           image,
           camera: camera.description,
-          deviceOrientation: camera.value.deviceOrientation,
+          deviceOrientation: orientation,
           timestamp: now,
         )
         .then((frame) {
           if (!ref.mounted || !identical(_camera, camera)) return;
           _poseMeter.tick(_clock.elapsed);
+          final gravity = _gravity;
+          final score = _scorer.score(
+            frame,
+            up: gravity == null
+                ? null
+                : imageUpFromGravity(gravity, orientation),
+            inputs: ref.read(sessionSetupProvider).inputs,
+            timestamp: now,
+          );
           state = state.copyWith(
-            pose: frame,
-            clearPose: frame == null,
+            score: score,
             poseFps: _poseMeter.fps,
             cameraFps: _cameraMeter.fps,
             droppedFrames: _dropped,
@@ -181,6 +201,9 @@ class LiveSessionController extends Notifier<LiveState> {
     _camera = null;
     _pose = null;
     _clock.stop();
+    await WakelockPlus.disable().catchError((Object e) {
+      debugPrint('Wakelock unavailable: $e');
+    });
     if (camera != null) {
       if (camera.value.isStreamingImages) {
         await camera.stopImageStream().catchError((_) {});

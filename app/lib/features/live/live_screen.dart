@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/camera_permission_provider.dart';
 import '../../providers/live_session_provider.dart';
 import '../../services/camera_permission_service.dart';
+import '../session/setup_sheet.dart';
 import 'hud.dart';
 import 'skeleton_painter.dart';
 
@@ -125,14 +126,14 @@ class _LiveCameraViewState extends ConsumerState<LiveCameraView> {
               child: RepaintBoundary(
                 child: CustomPaint(
                   painter: SkeletonPainter(
-                    pose: state.pose,
+                    score: state.score,
                     mirror: state.mirror,
                   ),
                 ),
               ),
             ),
           ),
-          LiveHud(state: state, onModel: _session.setModel),
+          LiveHud(state: state, onSetup: () => showSetupSheet(context)),
         ],
       ),
       _ => const Center(
