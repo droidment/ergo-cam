@@ -49,7 +49,7 @@ portrait and landscape.
 - [x] HUD: live REBA (with risk band), OWAS category, confidence indicator
 - [x] Camera placement guide: "side view, whole body in frame, 2–4 m away"
 - [x] Frames lacking confident landmarks show "unscored", not a number
-- [ ] Verified live on Pixel: standing ≤ 3; squat lift with 15 kg, fair grip ≥ 8
+- [x] Verified live on Pixel 11 (2026-10-12): standing REBA 1; squat lift with 15 kg, fair grip REBA 8
 
 **Done when:** a squat-lift scores high, standing upright scores low, live.
 
